@@ -164,6 +164,23 @@ art.drawCity(ctx, rect, now)                      // the start screen's night sk
 art.drawThiefTop(ctx, x, y, size, angle, now, moving)  // the thief seen from above, for traps
 ```
 
+Settled during the build:
+
+- `caption` — `y` is the vertical **centre** of the text unless the caller
+  passes `baseline: 'alphabetic'` (`heist.js` does, it lays text out from
+  the baseline).
+- `burst` — `life` is progress 0..1: pops in over the first 30%, then holds.
+  A caller that wants it to shrink back out passes a rising-then-falling
+  envelope, as `js/puzzles/index.js` does.
+- `drawThief` — `(x, y)` is the centre, `size` about the full height.
+  `drawThiefTop` — `(x, y)` the centre, `size` the shoulder width, `angle`
+  as `atan2`.
+- Added beyond the list: `floor(ctx, x, y, w, h, { tone, cell, shade, border })`
+  for the trap rooms, `bubble(ctx, x, y, w, h, tx, ty, { fill })`,
+  `font(size, weight)`, `textWidth(ctx, text, size)`, `rrect(...)`.
+- One "KA-CHUNK!" per opened lock, and it is the shell's open beat: the
+  puzzles do not draw their own.
+
 `venueId` is one of `kiosk`, `pawnshop`, `jeweller`, `casino`, `bank`,
 `vault`. `rect` is `{ x, y, w, h }`.
 
@@ -268,7 +285,11 @@ JOBS = [{
 }]
 payoutFor(job, secondsLeft, replay) -> number   // take + time bonus; a replay of a done job pays less
 isUnlocked(job, save) -> boolean                // in order: a job opens when the previous one is done
+splitPayout(job, secondsLeft, replay) -> { take, bonus, total }   // the getaway card's lines
 ```
+
+The last challenge of every job is a lock puzzle, never a trap, so the
+player always cracks the final one themselves (the drill cannot be used there).
 
 Six venues (`kiosk`, `pawnshop`, `jeweller`, `casino`, `bank`, `vault`), two
 or three jobs each, about 15 in all. Difficulty is a number 1–10 per lock.

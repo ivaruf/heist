@@ -1,0 +1,1335 @@
+/*
+ * style.css — every screen of HEIST except the shop's internals, in the
+ * game's own materials: a comic book at night (DESIGN.md §3.4, lane A).
+ *
+ * THE BOOK'S RULES, as CSS:
+ *
+ *   INK AND OFFSET SHADOW. Every panel and button has a solid ink border of
+ *   --line and casts --shadow, a hard ink block down and to the right, the
+ *   way a printed comic panel does. Nothing is blurred into a soft
+ *   drop-shadow, because a printer cannot do that either.
+ *
+ *   THE CITY SHOWS THROUGH. The canvas behind the DOM draws the night
+ *   skyline (art.drawCity) or the venue; every card is navy at ~85% over a
+ *   dot screen, so the moon and the searchlights are still there behind the
+ *   menu you are reading. If a panel would look the same over a white page
+ *   it is not finished (hub §2).
+ *
+ *   LETTERING. Headings, buttons and labels are the comic lettering stack
+ *   (--font, the same stack as art.FONT — see the comment there for why
+ *   each face is in it and why Comic Sans is not), mustard or cream in an
+ *   ink outline built from text-shadow, so it works on every engine without
+ *   -webkit-text-stroke. Buttons letter in capitals, the way a comic does;
+ *   the way back to the arcade is the one deliberate exception (sentence
+ *   case, hub §2). Running text — hints, the hint line under the volumes —
+ *   stays in the system body face, because nobody should read a paragraph
+ *   in marker pen.
+ *
+ *   SIRENS ARE RED AND BLUE, NOTHING ELSE IS. The menus use navy, mustard
+ *   and cream; red is kept for "busted", blue for the siren, so a red edge
+ *   always means trouble.
+ *
+ * Layout rules from hub §2 that are load-bearing, not decoration: the corner
+ * is three plates on every screen and every card keeps clear of it; peers in
+ * a row are `flex: 1 1 0`; a column is one grid with `justify-items:
+ * stretch` so everything in it shares an edge; the volume and language
+ * captions share one gutter; the way out is last, full width, a ghost; and
+ * the landscape-phone block at the bottom stands each menu up as two columns
+ * so nothing scrolls on a sideways phone (maxgear's shape).
+ *
+ * The markup this styles is index.html as the shell lane wrote it:
+ * section.screen > .card > .col for #start, #jobs, #getaway, #busted and
+ * #menu; #shop is a .screen the shop lane fills and styles (css/shop.css);
+ * #hud.hud > .hud-items > button.item-btn > canvas + .count; #corner last.
+ */
+
+/* ===================== tokens ===================== */
+
+:root {
+  --ink: #141625;
+  --paper: #fff6e0;
+  --night: #0b1029;
+  --navy: #1c2a5e;
+  --navy-hi: #2d4189;
+  --navy-lo: #141d45;
+  --mustard: #f4b63d;
+  --mustard-dk: #c98a1c;
+  --cream: #fbe9c0;
+  --red: #e5373d;
+  --red-dk: #a31f2a;
+  --blue: #2f7fe5;
+  --green: #47b04b;
+  --steel: #a9b6c8;
+
+  --line: 3px;
+  --radius: 12px;
+  --shadow: 5px 5px 0 var(--ink);
+  --shadow-sm: 3px 3px 0 var(--ink);
+
+  /* The lettering: the same stack as art.FONT. */
+  --font: "Marker Felt", "Chalkboard SE", "Comic Neue", "Arial Black",
+    "Arial Rounded MT Bold", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+
+  /* An ink outline for lettering, from shadows: works where text-stroke
+     does not, and survives a heavy fallback face. */
+  --outline: -2px -2px 0 var(--ink), 2px -2px 0 var(--ink),
+    -2px 2px 0 var(--ink), 2px 2px 0 var(--ink), 0 -2px 0 var(--ink),
+    0 2px 0 var(--ink), -2px 0 0 var(--ink), 2px 0 0 var(--ink);
+
+  /* The halftone that every panel is printed on. */
+  --dots: radial-gradient(circle, rgba(251, 233, 192, 0.07) 1.3px, transparent 1.8px) 0 0 / 8px 8px;
+
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+
+  /* Comfortable for a finger; a tablet is the common case. */
+  --tap: 48px;
+  --corner-gap: 8px;
+  --corner-inset: 10px;
+  /* What the corner takes from the top right: three plates, two gaps, the
+     inset and a little air. Screens keep their cards out of it. */
+  --corner-w: calc(3 * var(--tap) + 2 * var(--corner-gap) + 2 * var(--corner-inset));
+  --corner-h: calc(var(--tap) + 2 * var(--corner-inset));
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--cream);
+  font-family: var(--body);
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/*
+ * This is a game, not a document. On a tablet a resting thumb is a long
+ * press and a drag across a button is a text selection, so iPad Safari keeps
+ * highlighting labels and offering Copy / Look Up mid-crack. Nothing selects
+ * and nothing opens a callout, except a real text field. `manipulation`
+ * drops double-tap-to-zoom without taking pinch away. js/touch-guard.js is
+ * the second half: CSS alone is not honoured everywhere (hub CLAUDE.md §2,
+ * "a game is not a document").
+ */
+html,
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* The one canvas. touch-action:none because a drag here is turning a dial
+   or pushing a pin, and a browser that reads it as a scroll takes it away. */
+#view {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  outline: none;
+  background: var(--night);
+}
+
+/*
+ * The overlay. Click-through, so during a run the canvas gets every pointer
+ * that does not land on something actually drawn in the DOM; each screen and
+ * control turns pointer events back on for itself.
+ */
+#ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+noscript p {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  top: 40%;
+  text-align: center;
+  font: 700 1.2rem var(--font);
+}
+
+/* ===================== screens and cards ===================== */
+
+/*
+ * A screen is the whole viewport, padded clear of the notch and of the
+ * corner, with its card centred in what is left. The card's margin:auto in a
+ * flex column centres it while it fits and lets it start at the top (and the
+ * screen scroll, as a safety net) when it does not — the safe way to centre,
+ * unlike a fixed box with inset:0 and margin:auto (hub §2's iPad trap).
+ */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--safe-t) + var(--corner-h)) calc(var(--safe-r) + 16px)
+    calc(var(--safe-b) + 16px) calc(var(--safe-l) + 16px);
+  overflow: auto; /* a safety net on very short viewports, not a plan */
+  pointer-events: auto;
+}
+.screen > .card {
+  margin: auto;
+}
+
+/* The shop draws its own layout inside its screen (css/shop.css). */
+#shop {
+  display: block;
+  padding: 0;
+}
+
+/* The menu panel opens over a run or another screen: dim what is behind it,
+   above every other screen but below the corner. */
+#menu {
+  z-index: 4;
+  background: rgba(11, 16, 41, 0.62);
+}
+
+/*
+ * A comic panel: navy printed over a dot screen, ink border, the hard offset
+ * shadow, and a thin cream rule just inside the ink — the gutter line that
+ * makes a panel read as a panel at night. Translucent, so the city shows.
+ */
+.card {
+  position: relative;
+  width: min(380px, 100%);
+  padding: 22px 22px 20px;
+  border: var(--line) solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--dots), linear-gradient(rgba(28, 42, 94, 0.88), rgba(20, 29, 69, 0.92));
+  box-shadow:
+    inset 0 0 0 2px rgba(251, 233, 192, 0.55),
+    var(--shadow);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  color: var(--cream);
+  text-align: center;
+}
+#jobs > .card {
+  width: min(860px, 100%);
+}
+
+/* One column of one width: everything in a card shares both edges. */
+.col {
+  display: grid;
+  gap: 10px;
+  justify-items: stretch;
+  align-content: start;
+}
+
+/* ===================== lettering ===================== */
+
+h1,
+h2 {
+  margin: 0;
+  font-family: var(--font);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--mustard);
+  text-shadow: var(--outline), 4px 4px 0 var(--ink);
+}
+h2 {
+  font-size: clamp(1.6rem, 6vw, 2.1rem);
+  margin-bottom: 2px;
+}
+
+/*
+ * THE WORDMARK. HEIST in mustard capitals, outlined, with a red offset and
+ * an ink offset behind it, tilted like a title stamped onto a cover, over a
+ * red starburst. The burst is a clip-path polygon on ::before, so it costs
+ * nothing and needs no image.
+ */
+.wordmark {
+  position: relative;
+  justify-self: center;
+  margin: 2px 0 6px;
+  padding: 18px 26px;
+  font-size: clamp(3.2rem, 15vw, 4.6rem);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--mustard);
+  transform: rotate(-4deg);
+  text-shadow:
+    var(--outline),
+    5px 5px 0 var(--red),
+    7px 7px 0 var(--ink);
+  isolation: isolate;
+}
+.wordmark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--red-dk);
+  clip-path: polygon(
+    50% 0%, 58% 18%, 74% 4%, 74% 24%, 96% 16%, 86% 36%, 100% 50%, 86% 62%,
+    98% 84%, 74% 76%, 72% 98%, 58% 82%, 48% 100%, 40% 82%, 22% 96%, 24% 74%,
+    2% 82%, 14% 62%, 0% 48%, 14% 36%, 4% 14%, 26% 24%, 28% 2%, 42% 18%
+  );
+  opacity: 0.85;
+}
+
+/* A one-line subtitle or hint: the body face, cream, a little quieter. */
+.tag {
+  margin: 0;
+  font-family: var(--body);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: rgba(251, 233, 192, 0.85);
+}
+.tag:empty {
+  display: none;
+}
+#build {
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+/*
+ * THE MONEY PLATE. The shell writes only the amount; the coin is ::before,
+ * a gold disc with a star struck into it (no currency sign: money() already
+ * says kr or $). A dark pill with a mustard rim, centred in its column.
+ */
+.funds {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 4px;
+  padding: 4px 16px 4px 6px;
+  min-height: 38px;
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  background: var(--navy-lo);
+  box-shadow:
+    inset 0 0 0 2px var(--mustard-dk),
+    var(--shadow-sm);
+  font: 700 1.2rem/1 var(--font);
+  color: var(--mustard);
+  text-shadow: 2px 2px 0 var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.funds::before {
+  content: "";
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background:
+    radial-gradient(circle at 35% 30%, #fff2c8 0 3px, transparent 4px),
+    radial-gradient(circle, transparent 0 7px, var(--mustard-dk) 7.5px 8.5px, transparent 9px),
+    var(--mustard);
+}
+.funds:empty {
+  display: none;
+}
+
+/* ===================== buttons ===================== */
+
+/*
+ * The primary button: mustard, ink border, the offset shadow, capitals in the
+ * lettering. Pressed, it drops onto its own shadow — the button physically
+ * moves where the shadow was, the comic version of a click.
+ */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 8px 16px;
+  border: var(--line) solid var(--ink);
+  border-radius: 10px;
+  background: var(--mustard);
+  color: var(--ink);
+  font: 700 1.2rem/1.1 var(--font);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 246, 224, 0.6);
+  box-shadow:
+    inset 0 -4px 0 var(--mustard-dk),
+    var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.06s, box-shadow 0.06s, background-color 0.12s;
+}
+.btn:hover {
+  background-color: #ffc552;
+}
+.btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: inset 0 -2px 0 var(--mustard-dk);
+}
+.btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+  transform: none;
+}
+
+/* The quieter choice: the same box and the same size, outlined in cream
+   over the panel. Equal size, different weight (hub §2). */
+.btn.ghost {
+  background: rgba(20, 29, 69, 0.55);
+  color: var(--cream);
+  text-shadow: 2px 2px 0 var(--ink);
+  box-shadow:
+    inset 0 0 0 2px rgba(251, 233, 192, 0.75),
+    var(--shadow-sm);
+}
+.btn.ghost:hover {
+  background: rgba(45, 65, 137, 0.6);
+}
+.btn.ghost:active {
+  box-shadow: inset 0 0 0 2px rgba(251, 233, 192, 0.75);
+}
+
+/*
+ * THE WAY BACK TO THE ARCADE (hub §2, "One button"): last in its column,
+ * full width, more air above it than between the other items, outlined and
+ * never filled, because leaving is never the recommended action. The hub's
+ * back-arrow glyph before the words, and sentence case — the one button in
+ * the game that does not letter in capitals.
+ */
+.btn.exit {
+  margin-top: 14px;
+  min-height: 44px;
+  background: transparent;
+  color: rgba(251, 233, 192, 0.9);
+  font-family: var(--body);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  text-shadow: none;
+  box-shadow: inset 0 0 0 2px rgba(251, 233, 192, 0.35);
+}
+.btn.exit:hover {
+  background: rgba(251, 233, 192, 0.08);
+}
+.btn.exit:active {
+  transform: translate(1px, 1px);
+  box-shadow: inset 0 0 0 2px rgba(251, 233, 192, 0.35);
+}
+.btn.exit svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.btn[hidden] {
+  display: none;
+}
+
+/* A row of equal peers: one size each whatever their words (hub §2). */
+.btn-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.btn-row > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Visible focus everywhere: a dashed cream ring, the inked-in version of
+   a focus outline. */
+.btn:focus-visible,
+.seg-btn:focus-visible,
+.job:focus-visible,
+.item-btn:focus-visible,
+.update:focus-visible {
+  outline: 3px dashed var(--cream);
+  outline-offset: 3px;
+}
+
+/* ===================== the corner ===================== */
+
+/*
+ * Menu, sound, fullscreen, left to right, on every screen (hub §2). Three
+ * round mustard plates, inked, with the offset shadow; above every screen,
+ * the menu panel included, so they never go missing.
+ */
+#corner {
+  position: fixed;
+  z-index: 6;
+  top: calc(var(--safe-t) + var(--corner-inset));
+  right: calc(var(--safe-r) + var(--corner-inset));
+  display: flex;
+  gap: var(--corner-gap);
+  pointer-events: auto;
+}
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--mustard);
+  color: var(--ink);
+  box-shadow:
+    inset 0 -3px 0 var(--mustard-dk),
+    var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+/* [hidden] loses to display:flex without this (hub §2, hit three times). */
+.icon-button[hidden] {
+  display: none;
+}
+.icon-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: inset 0 -2px 0 var(--mustard-dk), 1px 1px 0 var(--ink);
+}
+.icon-button:focus-visible {
+  outline: 3px dashed var(--cream);
+  outline-offset: 3px;
+}
+.icon-button svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Each toggle carries both pictures; aria-pressed picks one, so what is
+   drawn and what a screen reader hears cannot drift. */
+#sound-btn[aria-pressed="true"] .icon-waves,
+#sound-btn:not([aria-pressed="true"]) .icon-slash,
+#screen-toggle[aria-pressed="true"] .icon-expand,
+#screen-toggle:not([aria-pressed="true"]) .icon-contract {
+  display: none;
+}
+
+/* ===================== settings rows ===================== */
+
+/*
+ * MUSIC and EFFECTS (hub §2, "Two volumes"): a caption in the lettering, an
+ * inked groove with a mustard fill up to the thumb, a mustard knob, and the
+ * number. Every caption — both volumes and the language — shares one gutter,
+ * so every control in the panel starts at the same x.
+ */
+.vol-row,
+.lang-row {
+  --gutter: 6.2em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  text-align: left;
+}
+.vol-row label,
+.lang-row > span {
+  flex: 0 0 var(--gutter);
+  font: 700 0.95rem/1.1 var(--font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mustard);
+  text-shadow: 2px 2px 0 var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vol-row output {
+  flex: 0 0 2.4em;
+  text-align: right;
+  font: 700 1rem var(--font);
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+}
+.vol-row input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.vol-row input[type="range"]::-webkit-slider-runnable-track {
+  height: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--navy-lo);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.vol-row input[type="range"]::-moz-range-track {
+  height: 8px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--navy-lo);
+}
+.vol-row input[type="range"]::-moz-range-progress {
+  height: 8px;
+  border-radius: 6px 0 0 6px;
+  background: var(--mustard);
+}
+.vol-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -10px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--mustard);
+  box-shadow: inset 0 -3px 0 var(--mustard-dk), 2px 2px 0 var(--ink);
+}
+.vol-row input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--mustard);
+}
+.vol-row input[type="range"]:focus-visible {
+  outline: 3px dashed var(--cream);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+/* The hint under the volumes ("no music yet"): small and quiet. */
+.vol-row + .vol-row + .tag {
+  margin-top: -2px;
+  font-size: 0.85rem;
+  text-align: left;
+  opacity: 0.8;
+}
+
+/*
+ * Language (hub §2): two equal buttons in one segmented row, Norsk first,
+ * each with its flag and its own name. Unchosen is the ghost, chosen is the
+ * mustard, so the choice reads in colour rather than in size.
+ */
+.seg {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.seg-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: var(--line) solid var(--ink);
+  border-radius: 10px;
+  background: rgba(20, 29, 69, 0.55);
+  color: var(--cream);
+  font: 700 1rem/1.1 var(--font);
+  text-shadow: 2px 2px 0 var(--ink);
+  box-shadow:
+    inset 0 0 0 2px rgba(251, 233, 192, 0.5),
+    var(--shadow-sm);
+  cursor: pointer;
+}
+.seg-btn[aria-pressed="true"] {
+  background: var(--mustard);
+  color: var(--ink);
+  text-shadow: none;
+  box-shadow:
+    inset 0 -3px 0 var(--mustard-dk),
+    var(--shadow-sm);
+}
+.seg-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.seg-btn .flag {
+  flex: none;
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1.5px var(--ink);
+}
+.seg-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===================== the start screen ===================== */
+
+#start > .card {
+  width: min(360px, 100%);
+}
+/* The give-up question, asked in the panel itself (never confirm()). */
+#giveup-confirm {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 2px dashed var(--red);
+  border-radius: 10px;
+  background: rgba(163, 31, 42, 0.18);
+}
+
+/* ===================== the job board ===================== */
+
+/*
+ * Every job a small comic panel of its own: the venue drawn on its canvas
+ * (160×90, the 16:9 thumbnail art.drawVenue makes), the name in the
+ * lettering, then the venue, the facts and the status in the body face. The
+ * cards are peers, so they are one grid of equal columns and every card in a
+ * row is the same height. The grid scrolls inside the card on a small screen
+ * — it is a list, not a menu — so the heading, funds and the Back row never
+ * leave the screen.
+ */
+.jobs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 14px;
+  max-height: calc(100vh - var(--corner-h) - var(--safe-t) - var(--safe-b) - 230px);
+  max-height: calc(100dvh - var(--corner-h) - var(--safe-t) - var(--safe-b) - 230px);
+  min-height: 140px;
+  overflow: auto;
+  padding: 4px 8px 10px 4px;
+  margin: 2px -4px 4px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.job {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
+  justify-items: stretch;
+  gap: 2px;
+  padding: 6px 6px 8px;
+  border: var(--line) solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  font-family: var(--body);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.job:hover {
+  transform: translate(-1px, -1px) rotate(-0.4deg);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.job:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.job canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 4px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--navy);
+}
+.job strong {
+  font: 700 1.05rem/1.15 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+.job small {
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: #3a3f5e;
+}
+.job small:empty {
+  display: none;
+}
+.job small:last-child {
+  font-weight: 700;
+  color: var(--ink);
+}
+/* Done: a green rubber stamp tilted across the corner of the picture, and
+   the status line in its colour. The tick is drawn with borders. */
+.job.done::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.job.done::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 17px;
+  right: 22px;
+  width: 8px;
+  height: 15px;
+  border: solid var(--paper);
+  border-width: 0 4px 4px 0;
+  transform: rotate(45deg);
+}
+.job.done small:last-child {
+  color: #2c7a33;
+}
+/* Locked: the card is printed in shadow, a padlock drawn over the picture. */
+.job.locked,
+.job:disabled {
+  cursor: default;
+  background: #b9b3a3;
+  box-shadow: var(--shadow-sm);
+  transform: none;
+}
+.job.locked canvas {
+  filter: grayscale(0.9) brightness(0.45);
+}
+.job.locked::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 26px;
+  left: 50%;
+  width: 30px;
+  height: 24px;
+  margin-left: -15px;
+  border: var(--line) solid var(--ink);
+  border-radius: 5px;
+  background:
+    radial-gradient(circle at 50% 42%, var(--ink) 0 3px, transparent 3.5px),
+    var(--mustard);
+}
+.job.locked::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 50%;
+  width: 18px;
+  height: 20px;
+  margin-left: -9px;
+  border: 4px solid var(--steel);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+}
+
+/* ===================== the run ===================== */
+
+/*
+ * The run is drawn on the canvas; the DOM holds only the gadgets, along the
+ * bottom. The bar itself lets pointers through to the lock — only the
+ * buttons take them.
+ */
+.hud {
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 calc(var(--safe-r) + 12px) calc(var(--safe-b) + 10px)
+    calc(var(--safe-l) + 12px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.hud-items {
+  display: flex;
+  gap: 12px;
+  pointer-events: none;
+}
+.item-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  border: var(--line) solid var(--ink);
+  border-radius: 12px;
+  background: var(--dots), var(--navy);
+  box-shadow:
+    inset 0 0 0 2px rgba(251, 233, 192, 0.55),
+    var(--shadow-sm);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.06s, box-shadow 0.06s, opacity 0.15s;
+}
+.item-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: inset 0 0 0 2px rgba(251, 233, 192, 0.55), 1px 1px 0 var(--ink);
+}
+.item-btn canvas {
+  display: block;
+  pointer-events: none;
+}
+/* Not usable right now (none left, the clock not running, the last lock):
+   printed faint, still there, so the player knows it exists. */
+.item-btn:disabled {
+  cursor: default;
+  opacity: 0.45;
+  transform: none;
+  filter: grayscale(0.6);
+}
+/* How many you carry: a red badge on the corner, inked. */
+.count {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--red);
+  color: var(--paper);
+  font: 700 0.95rem/22px var(--font);
+  text-align: center;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.count:empty {
+  display: none;
+}
+
+/* ===================== end cards ===================== */
+
+#getaway-art,
+#busted-art {
+  justify-self: center;
+  width: 160px;
+  height: 120px;
+  margin: -4px 0 0;
+}
+/* Getaway: the panel gets a mustard rim, the heading a little bounce. */
+#getaway > .card {
+  box-shadow:
+    inset 0 0 0 3px var(--mustard),
+    var(--shadow);
+}
+#getaway h2 {
+  animation: pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+#getaway .funds {
+  font-size: 1.35rem;
+}
+/* Busted: the one card printed in siren colours — a red rim, a red title. */
+#busted > .card {
+  box-shadow:
+    inset 0 0 0 3px var(--red),
+    var(--shadow);
+}
+#busted h2 {
+  color: var(--red);
+  text-shadow: var(--outline), 4px 4px 0 var(--blue);
+  animation: pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.4) rotate(-8deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(-2deg);
+    opacity: 1;
+  }
+}
+
+/* ===================== small pieces ===================== */
+
+/*
+ * UPDATE READY (js/update.js), on the start screen only. Not a way into a
+ * job, so not a mustard button: a dashed notice pinned to the panel, the
+ * title in the lettering and the line under it in the body face.
+ */
+.update {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 2px dashed var(--mustard);
+  border-radius: 10px;
+  background: rgba(244, 182, 61, 0.1);
+  color: var(--cream);
+  text-align: center;
+  cursor: pointer;
+}
+.update strong {
+  font: 700 1.05rem var(--font);
+  text-transform: uppercase;
+  color: var(--mustard);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+.update small {
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+.update:active {
+  background: rgba(244, 182, 61, 0.2);
+}
+
+/*
+ * A comic caption box: paper, ink, a slight tilt and the offset shadow, the
+ * box a narrator speaks from. Positioned by whoever shows it; by default it
+ * hangs top centre, below the corner.
+ */
+.toast {
+  position: fixed;
+  z-index: 5;
+  top: calc(var(--safe-t) + var(--corner-h) + 8px);
+  left: 50%;
+  max-width: min(420px, calc(100% - 32px));
+  padding: 8px 16px;
+  border: var(--line) solid var(--ink);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 700 1.05rem/1.2 var(--font);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  translate: -50% 0;
+  rotate: -1.5deg;
+  pointer-events: none;
+  animation: toast-in 0.25s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes toast-in {
+  from {
+    scale: 0.6;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+#crash {
+  position: fixed;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 16px calc(10px + var(--safe-b));
+  border-top: var(--line) solid var(--ink);
+  background: var(--red-dk);
+  color: var(--paper);
+  font: 13px/1.4 var(--body);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #getaway h2,
+  #busted h2,
+  .toast {
+    animation: none;
+  }
+  .btn,
+  .job,
+  .icon-button,
+  .item-btn {
+    transition: none;
+  }
+}
+
+/* A narrow phone: the board is two columns of smaller cards. */
+@media (max-width: 420px) {
+  .jobs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .job strong {
+    font-size: 0.95rem;
+  }
+  .card {
+    padding: 18px 16px 16px;
+  }
+}
+
+/*
+ * ===================== a phone on its side =====================
+ *
+ * 300–430px tall, and a browser toolbar can take fifty of those. A column
+ * that fits a portrait phone with room to spare runs off the bottom sideways,
+ * and what goes off the bottom is the way out. What a sideways phone has
+ * instead is width, so each card becomes a two-column grid laid over the
+ * same markup BY GRID AREA (maxgear's shape): nothing moves in index.html,
+ * portrait is untouched, and a tablet — taller than 500px whichever way up —
+ * keeps the stacked layout.
+ *
+ * The corner stays in the corner. Here it sits beside the cards rather than
+ * above them, so screens give up the corner's width on the right instead of
+ * its height on top. Controls come down to 40px and no further: this only
+ * ever fires on a phone, where a finger is still the pointer.
+ */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --tap: 40px;
+    --corner-gap: 6px;
+    --corner-inset: 8px;
+  }
+  .icon-button svg {
+    width: 20px;
+    height: 20px;
+  }
+  .screen {
+    padding: calc(var(--safe-t) + 8px) calc(var(--safe-r) + var(--corner-w))
+      calc(var(--safe-b) + 8px) calc(var(--safe-l) + 12px);
+  }
+  .card {
+    padding: 12px 16px 12px;
+  }
+  .col {
+    gap: 7px;
+  }
+  h2 {
+    font-size: 1.45rem;
+  }
+  .btn {
+    min-height: 40px;
+    padding: 5px 12px;
+    font-size: 1.05rem;
+  }
+  .btn.exit {
+    margin-top: 6px;
+    min-height: 38px;
+  }
+  .funds {
+    min-height: 32px;
+    font-size: 1.05rem;
+  }
+  .funds::before {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Start: the wordmark, tagline and funds on the left; the ways in, the
+     update notice and the way out on the right. */
+  #start > .card {
+    width: min(640px, 100%);
+  }
+  #start .col {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "mark  play"
+      "mark  shop"
+      "tag   upd"
+      "funds exit"
+      "build exit";
+    column-gap: 22px;
+    align-items: center;
+  }
+  #start .wordmark {
+    grid-area: mark;
+    font-size: 3.2rem;
+    padding: 12px 18px;
+  }
+  #start-play {
+    grid-area: play;
+  }
+  #start-shop {
+    grid-area: shop;
+  }
+  #start .col > .tag:not(#build) {
+    grid-area: tag;
+  }
+  #start-funds {
+    grid-area: funds;
+  }
+  #update {
+    grid-area: upd;
+  }
+  #start-exit {
+    grid-area: exit;
+    align-self: end;
+  }
+  #build {
+    grid-area: build;
+  }
+  .update small {
+    display: none;
+  }
+
+  /* Jobs: heading and funds side by side above, a wider board, Back below. */
+  #jobs > .card {
+    width: 100%;
+  }
+  #jobs .col {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title funds"
+      "list  list"
+      "row   row";
+    align-items: center;
+  }
+  #jobs h2 {
+    grid-area: title;
+    text-align: left;
+  }
+  #jobs-funds {
+    grid-area: funds;
+    margin: 0;
+  }
+  #job-list {
+    grid-area: list;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    max-height: calc(100vh - var(--safe-t) - var(--safe-b) - 140px);
+    max-height: calc(100dvh - var(--safe-t) - var(--safe-b) - 140px);
+    min-height: 100px;
+  }
+  #jobs .btn-row {
+    grid-area: row;
+  }
+
+  /* The menu panel: the title and the run's buttons down the left, the two
+     volumes, the hint and the language down the right, the way out under
+     them. Every element has an area even though half are hidden at a time:
+     one without would land in an auto row the moment it is shown. */
+  #menu > .card {
+    width: min(700px, 100%);
+  }
+  #menu .col {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-areas:
+      "title  music"
+      "tag    sfx"
+      "resume hint"
+      "restart lang"
+      "giveup exit"
+      "back   exit";
+    column-gap: 20px;
+    align-items: center;
+    align-content: start;
+  }
+  #menu-title {
+    grid-area: title;
+  }
+  #menu-tag {
+    grid-area: tag;
+  }
+  #menu-resume {
+    grid-area: resume;
+  }
+  #menu-restart {
+    grid-area: restart;
+  }
+  #menu-giveup,
+  #giveup-confirm {
+    grid-area: giveup;
+  }
+  #giveup-confirm {
+    grid-row: resume / span 3;
+    align-self: start;
+    padding: 6px;
+    gap: 6px;
+  }
+  #menu-back {
+    grid-area: back;
+  }
+  #menu-back + .vol-row {
+    grid-area: music;
+  }
+  #menu-back + .vol-row + .vol-row {
+    grid-area: sfx;
+  }
+  #menu .vol-row + .vol-row + .tag {
+    grid-area: hint;
+  }
+  #menu .lang-row {
+    grid-area: lang;
+  }
+  #menu-exit {
+    grid-area: exit;
+    align-self: end;
+  }
+  .vol-row,
+  .lang-row {
+    --gutter: 5.2em;
+    min-height: 38px;
+  }
+  .vol-row input[type="range"] {
+    height: 34px;
+  }
+  .seg-btn {
+    min-height: 38px;
+    padding: 4px 8px;
+  }
+
+  /* End cards: the picture and the verdict left, the figures and the
+     buttons right. */
+  #getaway > .card,
+  #busted > .card {
+    width: min(620px, 100%);
+  }
+  #getaway .col,
+  #busted .col {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-auto-flow: dense;
+    column-gap: 20px;
+    align-items: center;
+  }
+  #getaway-art,
+  #busted-art {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+  }
+  #getaway h2,
+  #busted h2 {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  #getaway .col > :not(canvas):not(h2),
+  #busted .col > :not(canvas):not(h2) {
+    grid-column: 2;
+  }
+
+  /* Gadgets sit bottom left, out of the lock's way. */
+  .hud {
+    justify-content: flex-start;
+  }
+  .item-btn {
+    width: 52px;
+    height: 52px;
+  }
+}

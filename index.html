@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#141a33" />
+    <meta
+      name="description"
+      content="A comic-book safecracking game. Crack the locks and slip past the alarms before the police car arrives, then spend the take on better tools."
+    />
+    <title>HEIST</title>
+    <!-- The arcade builds this game's cabinet from the manifest, splitting
+         `name` on the em-dash; the install prompt reads it too. -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/icon-180.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <!-- The art lane owns style.css (every screen and component); the shop
+         lane owns shop.css, built only from style.css's tokens. -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/shop.css" />
+    <!-- The language before first paint, so the page never flashes the wrong
+         one: the hub's shared choice (arcade.lang.v1), Norwegian when there
+         is none. js/i18n.js reads the same key and owns it from then on. -->
+    <script>
+      (function () {
+        var l = "nb";
+        try {
+          if (localStorage.getItem("arcade.lang.v1") === "en") l = "en";
+        } catch (e) {}
+        document.documentElement.lang = l;
+      })();
+    </script>
+    <!-- Classic and first: it must survive anything the module graph does. -->
+    <script src="js/touch-guard.js"></script>
+    <!--
+      What quitting means here: back to the arcade when the arcade framed us,
+      closing the window when we are installed. arcade/exit.js decides that
+      and draws nothing; js/main.js shows our own button only once
+      window.ArcadeExit has actually turned up.
+
+      Classic and deferred on purpose: another repo's file inside a module
+      graph takes the whole game down with it when it 404s — and it is
+      EXPECTED to 404 when this directory is served on its own, which is what
+      data-handled tells the crash bar at the bottom of this file.
+    -->
+    <script src="../arcade/exit.js" defer data-handled="optional"></script>
+  </head>
+  <body>
+    <!--
+      The one canvas, full viewport, owned by js/heist.js: the city at night
+      behind the start screen, the job board and the shop; the venue, the
+      police meter and the current lock during a run.
+    -->
+    <canvas id="view" aria-label="Låsen" data-i18n-aria="run.view"></canvas>
+
+    <noscript>
+      <p>HEIST trenger JavaScript. · HEIST needs JavaScript.</p>
+    </noscript>
+
+    <div id="ui">
+      <!--
+        Every class below is DESIGN.md §3.4's vocabulary and nothing else; the
+        art lane styles it. Ids are for js/main.js to find things by.
+      -->
+
+      <!-- THE START SCREEN: the ways in, then the way out, last. -->
+      <section id="start" class="screen" hidden>
+        <div class="card">
+          <div class="col">
+            <h1 class="wordmark">HEIST</h1>
+            <p class="tag" data-i18n="ui.tag">Knekk den før politiet kommer.</p>
+            <p id="start-funds" class="funds"></p>
+            <button id="start-play" class="btn" type="button" data-i18n="ui.play">Spill</button>
+            <button id="start-shop" class="btn ghost" type="button" data-i18n="ui.shop">Butikk</button>
+            <!--
+              UPDATE READY. Hidden until a new service worker has installed and
+              is waiting; tapping it is the only thing in the game that posts
+              SKIP_WAITING. It lives on the start screen on purpose: this screen
+              is gone for the whole of a job, so no deploy can reload a run out
+              from under the player. Owned end to end by js/update.js, which
+              nothing imports.
+            -->
+            <button id="update" class="update" type="button" hidden>
+              <strong>Ny versjon klar</strong>
+              <small>Trykk for å hente den</small>
+            </button>
+            <!--
+              The way back to the arcade (hub §2): last in the column, full
+              width, a ghost, the shared back glyph, sentence case. The same
+              button ends the menu panel on both its faces. js/main.js shows
+              both once window.ArcadeExit has turned up, worded by verb().
+            -->
+            <button id="start-exit" class="btn exit" type="button" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" /></svg>
+              <span>Tilbake til arkaden</span>
+            </button>
+            <p id="build" class="tag" hidden></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- THE JOB BOARD. Cards are built by js/main.js from jobs.js. -->
+      <section id="jobs" class="screen" hidden>
+        <div class="card">
+          <div class="col">
+            <h2 data-i18n="ui.jobs">Oppdrag</h2>
+            <p id="jobs-funds" class="funds"></p>
+            <div id="job-list" class="jobs"></div>
+            <div class="btn-row">
+              <button id="jobs-shop" class="btn ghost" type="button" data-i18n="ui.shop">Butikk</button>
+              <button id="jobs-back" class="btn ghost" type="button" data-i18n="ui.back">Tilbake</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- THE SHOP. Empty on purpose: js/shop.js fills it (mountShop). -->
+      <section id="shop" class="screen" hidden></section>
+
+      <!-- The run's DOM HUD: the gadgets along the bottom. js/heist.js fills it. -->
+      <div id="hud" class="hud" hidden>
+        <div id="hud-items" class="hud-items"></div>
+      </div>
+
+      <!-- GETAWAY: the take, the time bonus, the new funds. -->
+      <section id="getaway" class="screen" hidden>
+        <div class="card">
+          <div class="col">
+            <canvas id="getaway-art" width="160" height="120" aria-hidden="true"></canvas>
+            <h2 data-i18n="run.getaway">Du slapp unna!</h2>
+            <p id="getaway-take" class="tag"></p>
+            <p id="getaway-bonus" class="tag"></p>
+            <p id="getaway-replay" class="tag" data-i18n="run.replay" hidden></p>
+            <p id="getaway-funds" class="funds"></p>
+            <div class="btn-row">
+              <button id="getaway-jobs" class="btn" type="button" data-i18n="ui.jobs">Oppdrag</button>
+              <button id="getaway-shop" class="btn ghost" type="button" data-i18n="ui.shop">Butikk</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUSTED: the thief in cuffs, a gentle line, nothing lost but gadgets. -->
+      <section id="busted" class="screen" hidden>
+        <div class="card">
+          <div class="col">
+            <canvas id="busted-art" width="160" height="120" aria-hidden="true"></canvas>
+            <h2 data-i18n="run.busted">Tatt!</h2>
+            <p class="tag" data-i18n="run.busted.line"></p>
+            <div class="btn-row">
+              <button id="busted-again" class="btn" type="button" data-i18n="run.again">Prøv igjen</button>
+              <button id="busted-jobs" class="btn ghost" type="button" data-i18n="ui.jobs">Oppdrag</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        THE MENU PANEL, the one door behind the three-bar plate (hub §2, "The
+        corner"). Two faces of one card, chosen by js/main.js:
+          in a run    "Pause": Resume, Restart, Give up (asked here, in the
+                      panel — never confirm()). The clock stops: HEIST is
+                      solo, always yours to pause.
+          elsewhere   "Settings": no run controls, and a Back to the screen
+                      it was opened over.
+        Both carry MUSIC and EFFECTS, the language row, and the way back to the
+        arcade last. There is no separate sound panel.
+      -->
+      <section id="menu" class="screen" hidden>
+        <div class="card">
+          <div class="col">
+            <h2 id="menu-title" data-i18n="ui.paused">Pause</h2>
+            <p id="menu-tag" class="tag" data-i18n="menu.paused.tag"></p>
+            <button id="menu-resume" class="btn" type="button" data-i18n="ui.resume">Fortsett</button>
+            <button id="menu-restart" class="btn ghost" type="button" data-i18n="ui.restart">Start på nytt</button>
+            <button id="menu-giveup" class="btn ghost" type="button" data-i18n="ui.giveup">Gi opp</button>
+            <div id="giveup-confirm" hidden>
+              <p class="tag" data-i18n="menu.giveup.ask"></p>
+              <div class="btn-row">
+                <button id="giveup-no" class="btn" type="button" data-i18n="menu.giveup.no">Nei, fortsett</button>
+                <button id="giveup-yes" class="btn ghost" type="button" data-i18n="menu.giveup.yes">Ja, gi opp</button>
+              </div>
+            </div>
+            <button id="menu-back" class="btn ghost" type="button" data-i18n="ui.back" hidden>Tilbake</button>
+
+            <!-- MUSIC and EFFECTS (hub §2, "Two volumes"). -->
+            <div class="vol-row">
+              <label for="vol-music" data-i18n="ui.music">MUSIKK</label>
+              <input id="vol-music" type="range" min="0" max="100" step="5" value="80" />
+              <output id="vol-music-out" for="vol-music">80</output>
+            </div>
+            <div class="vol-row">
+              <label for="vol-sfx" data-i18n="ui.sfx">EFFEKTER</label>
+              <input id="vol-sfx" type="range" min="0" max="100" step="5" value="80" />
+              <output id="vol-sfx-out" for="vol-sfx">80</output>
+            </div>
+            <p class="tag" data-i18n="menu.nomusic"></p>
+
+            <!-- Language (hub §2): here and nowhere else. One copy in the
+                 page, so the Union Jack's clipPath ids are unique as they are. -->
+            <div class="lang-row">
+              <span data-i18n="ui.language">Språk</span>
+              <div class="seg" role="group" data-i18n-label="ui.language" aria-label="Språk">
+                <button type="button" class="seg-btn" data-lang="nb" aria-pressed="true" lang="nb">
+                  <svg class="flag" viewBox="0 0 22 16" aria-hidden="true">
+                    <rect width="22" height="16" fill="#ba0c2f"/>
+                    <path d="M6 0h4v16H6zM0 6h22v4H0z" fill="#fff"/>
+                    <path d="M7 0h2v16H7zM0 7h22v2H0z" fill="#00205b"/>
+                  </svg>
+                  <span>Norsk</span>
+                </button>
+                <button type="button" class="seg-btn" data-lang="en" aria-pressed="false" lang="en">
+                  <svg class="flag" viewBox="0 0 60 30" aria-hidden="true">
+                    <clipPath id="uk-clip-menu"><path d="M0 0v30h60V0z"/></clipPath>
+                    <clipPath id="uk-diag-menu"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath>
+                    <g clip-path="url(#uk-clip-menu)">
+                      <path d="M0 0v30h60V0z" fill="#012169"/>
+                      <path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/>
+                      <path d="M0 0l60 30m0-30L0 30" clip-path="url(#uk-diag-menu)" stroke="#c8102e" stroke-width="4"/>
+                      <path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>
+                      <path d="M30 0v30M0 15h60" stroke="#c8102e" stroke-width="6"/>
+                    </g>
+                  </svg>
+                  <span>English</span>
+                </button>
+              </div>
+            </div>
+
+            <button id="menu-exit" class="btn exit" type="button" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" /></svg>
+              <span>Tilbake til arkaden</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        THE CORNER (hub §2): menu, sound, fullscreen, left to right, on every
+        screen. Three kinds of thing: fullscreen changes the window, sound
+        changes the sound, and only the menu touches the game. The glyphs are
+        the hub's exact paths; CSS picks each toggle's picture off
+        aria-pressed, which js/main.js and js/screen.js write in the same
+        breath as the label. Last in #ui, so it sits over every screen.
+      -->
+      <div id="corner">
+        <button id="menu-btn" class="icon-button" type="button" aria-label="Meny" title="Meny" data-i18n-label="ui.menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+        <!-- A live mute: one tap, nothing opened, nothing paused. -->
+        <button id="sound-btn" class="icon-button" type="button" aria-pressed="false" aria-label="Lyd av" title="Lyd av">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4Z" />
+            <path class="icon-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" />
+            <path class="icon-slash" d="m15.5 9.5 6 5m0-5-6 5" />
+          </svg>
+        </button>
+        <!-- Hidden until js/screen.js finds a working request/exit pair. -->
+        <button id="screen-toggle" class="icon-button" type="button" aria-pressed="false" aria-label="Fullskjerm" title="Fullskjerm" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="icon-expand" d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6" />
+            <path class="icon-contract" d="M3 9h6V3M21 9h-6V3M3 15h6v6M21 15h-6v6" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!--
+      Crash bar. A module script reports its whole import graph through the
+      one <script> tag, so a failure here names js/main.js even when the file
+      that actually failed to load was one of its imports — say so in the
+      message, or the next reader goes and checks a file that is serving 200s.
+    -->
+    <div id="crash" role="alert" hidden></div>
+    <script>
+      (function () {
+        // Its own words, read from <html lang> at the moment of the crash:
+        // this must work when js/i18n.js never loaded at all.
+        var WORDS = {
+          nb: {
+            load: "Et skript kunne ikke lastes: ",
+            hint: " (er det js/main.js, kan den egentlige feilen være en av filene den importerer)",
+            broke: "Noe gikk i stykker: ",
+          },
+          en: {
+            load: "A script failed to load: ",
+            hint: " (if this is js/main.js, the real culprit may be one of its imports)",
+            broke: "Something broke: ",
+          },
+        };
+        function w() {
+          return WORDS[document.documentElement.lang] || WORDS.nb;
+        }
+        var bar = document.getElementById("crash");
+        function show(msg) {
+          bar.textContent = msg;
+          bar.hidden = false;
+        }
+        window.addEventListener(
+          "error",
+          function (e) {
+            var t = e.target;
+            if (t && t.tagName === "SCRIPT" && t.dataset && t.dataset.handled)
+              return;
+            if (t && t.tagName === "SCRIPT") {
+              show(w().load + t.src + w().hint);
+              return;
+            }
+            if (t && t !== window) return; // an <img> or <link>: not a crash
+            show(w().broke + (e.message || e.type));
+          },
+          true,
+        );
+        window.addEventListener("unhandledrejection", function (e) {
+          show(
+            w().broke +
+              (e.reason && e.reason.message ? e.reason.message : e.reason),
+          );
+        });
+      })();
+    </script>
+    <!--
+      The service worker and the update button, in a graph of their own and
+      ahead of the game's: a module graph aborts as a whole when one import
+      fails, and the button that fetches a fix must not die with what it fixes.
+    -->
+    <script type="module" src="js/update.js"></script>
+    <!-- The fullscreen plate, self-contained for the same reason. -->
+    <script type="module" src="js/screen.js"></script>
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

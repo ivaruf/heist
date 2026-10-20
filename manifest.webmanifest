@@ -1,0 +1,16 @@
+{
+  "name": "HEIST — Crack it before the cops come.",
+  "short_name": "HEIST",
+  "description": "A comic-book safecracking game. Pick locks, crack dials, cut the right wire and slip past the lasers before the police car arrives, then spend the take on better tools.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#141a33",
+  "theme_color": "#141a33",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
