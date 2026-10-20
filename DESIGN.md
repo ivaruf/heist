@@ -65,6 +65,7 @@ take is an in-fiction economy and connects to nothing outside the game (§7).
 | **P — safe cracking** | the four lock puzzles | `js/puzzles/index.js`, `js/puzzles/dial.js`, `js/puzzles/pins.js`, `js/puzzles/keypad.js`, `js/puzzles/wires.js` |
 | **E — tools and jobs** | the tool and gadget catalogue, the mods they produce, the job list, payouts, the difficulty curve | `js/tools.js`, `js/jobs.js` |
 | **K — shop** | the tool shop screen | `js/shop.js`, `css/shop.css` |
+| **T — traps** | the alarm and trap challenges that sit between locks | `js/traps/index.js`, `js/traps/lasers.js`, `js/traps/cameras.js`, `js/traps/tiles.js` |
 | **A — art** | the whole look: palette, type, every drawing helper, all CSS except the shop's, the icons | `js/art.js`, `css/style.css`, `tools/make-icons.py`, `icons/*` |
 
 **One file, one owner.** Never edit another lane's file. If you need
@@ -88,7 +89,7 @@ import { t, getLang, setLang, paintStatic, addStrings, money } from './i18n.js';
   A value may be a function: `'jobs.locks': (n) => n === 1 ? '1 lock' : `${n} locks``.
 - `addStrings({ nb: {...}, en: {...} })` — every lane registers its own words
   at module load, under **its own key prefix**, so no lane edits another's
-  table: P `pz.*`, E `tool.*` `item.*` `job.*` `venue.*`, K `shop.*`.
+  table: P `pz.*`, T `trap.*`, E `tool.*` `item.*` `job.*` `venue.*`, K `shop.*`.
   S owns everything unprefixed and `ui.*`, `run.*`, `menu.*`.
 - `money(n)` — the take as the player reads it: nb `1 200 kr`, en `$1,200`.
 - `arcade:lang` is dispatched on `document` after every switch; anything that
@@ -160,6 +161,7 @@ art.drawThief(ctx, x, y, size, pose, now)         // pose: 'idle' | 'work' | 'ch
 art.drawShopkeeper(ctx, rect, now, mood)          // mood: 'idle' | 'happy' | 'skeptical'
 art.drawItem(ctx, id, x, y, size, tier)           // icon for any tool or item id in §4 (centred at x,y)
 art.drawCity(ctx, rect, now)                      // the start screen's night skyline
+art.drawThiefTop(ctx, x, y, size, angle, now, moving)  // the thief seen from above, for traps
 ```
 
 `venueId` is one of `kiosk`, `pawnshop`, `jeweller`, `casino`, `bank`,
@@ -225,10 +227,14 @@ changes the table without changing this file.
 | `tester` | wires | none: trace the wires by eye | **Wire tester**: tap a terminal to light its whole wire for a moment | **Colour-coded**: no two wires share a colour | **Trace scope**: the next wire to cut pulses |
 | `sneakers` | null | — | heat ×0.75 | heat ×0.5 | heat ×0.3 |
 | `scanner` | null | — | police take +10% longer | +20% | +35% |
+| `goggles` | lasers | beams faint, and blink out of sight for a moment every few seconds | **Night goggles**: beams always clearly visible | **Thermal goggles**: a ghost shows where each moving beam will be in 1 s | **Laser mirror**: the first beam you touch in a room is reflected harmlessly |
+| `jammer` | cameras | camera cones drawn soft, edges vague | **Camera map**: cones drawn with exact hard edges | **Signal jammer**: cameras sweep 25% slower | **Loop tape**: tap a camera to freeze it for 3 s, once per room |
+| `chalk` | tiles | the safe path is flashed once, briefly | **Chalk**: the path is shown twice as long | **Replay**: one extra showing per room, on demand | **Chalk marks**: the first three safe tiles stay marked |
 
 ```js
 MODS = {
   dial: 0..3, pins: 0..3, keypad: 0..3, wires: 0..3,  // the tool tier for that puzzle
+  lasers: 0..3, cameras: 0..3, tiles: 0..3,            // ...and for that trap
   heatScale: number,    // 1 at tier 0
   timeScale: number,    // multiplies the job's time limit; 1 at tier 0
 }
@@ -254,7 +260,8 @@ run starts.
 import { JOBS, payoutFor, isUnlocked } from './jobs.js';
 JOBS = [{
   id: 'kiosk-1', venue: 'kiosk', nameKey: 'job.kiosk-1',
-  locks: [{ kind: 'pins', difficulty: 1 }, { kind: 'dial', difficulty: 1 }],
+  locks: [{ kind: 'pins', difficulty: 1 }, { kind: 'lasers', difficulty: 1 }, { kind: 'dial', difficulty: 1 }],
+                       // a "lock" is any challenge: a puzzle kind (§6) or a trap kind (§6a)
   time: 90,            // seconds, before mods.timeScale
   heatSeconds: 6,      // a severity-1 mistake costs this many seconds
   payout: 120,         // the take
@@ -322,6 +329,38 @@ Every puzzle must be playable with pointer alone (tablet) and with keyboard
 alone, legible at a rect of 300×300, and drawn in the art lane's style
 through `art.*` — ink outlines, flat fills, halftone shading, sound words via
 `art.burst`. No per-frame allocation in `draw` (hub §10).
+
+---
+
+## 6a. Traps (T owns `js/traps/*`)
+
+Alarms and traps are the other half of a heist: between the locks you have
+to get *through* the building. A trap is a challenge in exactly the same slot
+as a lock — same options, same object, same events — so the shell and the
+job list treat them alike.
+
+```js
+import { createTrap, TRAP_KINDS } from './traps/index.js';   // TRAP_KINDS = ['lasers','cameras','tiles']
+const trap = createTrap(kind, opts);   // opts and the returned object exactly as §6
+```
+
+The shell dispatches on kind: `TRAP_KINDS.includes(kind) ? createTrap : createPuzzle`.
+`tier` is `MODS[kind]`. Traps are drawn top-down (a floor plan in the comic
+style); the thief is `art.drawThiefTop`.
+
+- **`lasers`** — the laser hall. Steer the thief (drag to move / arrow keys)
+  across a room from the door to the far exit through static, blinking and
+  sweeping beams. Touching a beam is a mistake of severity 2 and puts you back
+  at the door. Difficulty: more beams, more movement, faster.
+- **`cameras`** — the camera corridor. Hop between pieces of cover (tap the
+  next cover spot, or arrow keys) while sweeping security cameras look away;
+  caught in a cone → mistake, back to the last cover. Timing.
+- **`tiles`** — the pressure floor. A grid of floor tiles; the safe path is
+  flashed, then you walk it from memory (tap adjacent tiles / arrow keys). A
+  wrong tile is a mistake and the path flashes again. Memory.
+
+Same rules as §6: pointer and keyboard both, legible at 300×300, `art.*`
+style, no per-frame allocation, `pz.`-style words under the `trap.` prefix.
 
 ---
 
