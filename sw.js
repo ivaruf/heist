@@ -25,7 +25,7 @@
 // All paths are RELATIVE: the game is served from /heist/ and is also framed
 // by the arcade from a sibling directory.
 
-const VERSION = 'v0.1.3'; // the first jobs open on floors, lasers and cameras, not always the back door
+const VERSION = 'v0.1.4'; // the last lock of a job is cracked, not skipped
 const CACHE = `heist-${VERSION}`;
 
 // Every shipped file, of every lane (DESIGN.md §2). install blocks until all of

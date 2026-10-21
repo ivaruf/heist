@@ -350,6 +350,11 @@ export function createHeist({ canvas, hud, hudItems, corner, onGetaway, onBusted
     run.phase = 'beat';
     run.beatT = 0;
     run.swapped = false;
+    // Decided once, here, from the challenge that was just opened. The beat
+    // used to ask `index >= last` on every tick, and once the final challenge
+    // had slid in (index now pointing at it) that answer turned true, so the
+    // beat ended in the getaway and the last lock of every job was skipped.
+    run.beatLast = run.index >= run.job.locks.length - 1;
     run.drill = -1;
     run.forced = -1;
     sfx('clunk');
@@ -490,7 +495,7 @@ export function createHeist({ canvas, hud, hudItems, corner, onGetaway, onBusted
       if (r.phase === 'crack' && r.clock <= 0) bust();
     } else if (r.phase === 'beat') {
       r.beatT += dt;
-      const last = r.index >= r.job.locks.length - 1;
+      const last = r.beatLast;
       if (!last && !r.swapped && r.beatT >= SWAP) {
         dropChallenge();
         r.index++;
