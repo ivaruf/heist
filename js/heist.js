@@ -584,7 +584,10 @@ export function createHeist({ canvas, hud, hudItems, corner, onGetaway, onBusted
       HALFTONE.color = art.PAL.navy;
       art.panel(ctx, box.x, box.y, box.w, box.h, optPanel);
       art.halftone(ctx, box.x, box.y, box.w, box.h, HALFTONE);
-    } else if (r.challenge) {
+    } else if (r.challenge && (r.phase === 'crack' || r.phase === 'beat')) {
+      // Only while the job is on. Behind the getaway and busted cards the
+      // last lock used to stay drawn, and an owner playtesting read it as a
+      // task left to solve; the building alone is the backdrop there.
       const dx = r.slide * (W - box.x);
       if (dx) {
         ctx.save();

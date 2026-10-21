@@ -25,7 +25,7 @@
 // All paths are RELATIVE: the game is served from /heist/ and is also framed
 // by the arcade from a sibling directory.
 
-const VERSION = 'v0.1.0'; // first build: five lanes and the traps, one heist
+const VERSION = 'v0.1.1'; // no lock left drawn behind the getaway and busted cards
 const CACHE = `heist-${VERSION}`;
 
 // Every shipped file, of every lane (DESIGN.md §2). install blocks until all of
