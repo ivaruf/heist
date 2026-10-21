@@ -12,14 +12,19 @@
  *
  * EVERY KIND IS MET GENTLY FIRST. Each of the seven kinds makes its debut at
  * difficulty 1, in a job with time to spare, and is the only newcomer in
- * it: pins and dial in kiosk-1, tiles in kiosk-2, lasers in pawnshop-1,
+ * it: tiles and dial in kiosk-1, pins in kiosk-2, lasers in pawnshop-1,
  * keypad in jeweller-1, cameras in jeweller-2, wires in casino-1. After its
  * debut a kind climbs about one difficulty point per venue.
  *
+ * AND NO TWO EARLY JOBS OPEN ALIKE. The first build opened all six of the
+ * first jobs on the back door, and the owner's playtest said it plainly: it
+ * should not "just be lockpicking". So the openers run floor, door, lasers,
+ * floor, lasers, cameras, and pins turn up in only three of the first six.
+ *
  * THE CURVE, VENUE BY VENUE (first clears, before the time bonus):
  *   kiosk      2 jobs  100 + 140       = 240    2–3 challenges, d1–2
- *   pawnshop   2 jobs  190 + 250       = 440    3–4 challenges, d1–3
- *   jeweller   3 jobs  320 + 400 + 480 = 1200   3–4 challenges, d1–4
+ *   pawnshop   2 jobs  190 + 250       = 440    2–3 challenges, d1–2
+ *   jeweller   3 jobs  320 + 400 + 480 = 1200   2–4 challenges, d1–4
  *   casino     3 jobs  560 + 680 + 800 = 2040   3–4 challenges, d1–5
  *   bank       3 jobs  1000+1250+1500  = 3750   4 challenges, d5–7, every kind
  *   vault      2 jobs  2100 + 3000     = 5100   5 challenges, d7–10
@@ -87,23 +92,23 @@ const job = (id, venue, locks, time, heatSeconds, payout) => ({
 export const VENUES = ['kiosk', 'pawnshop', 'jeweller', 'casino', 'bank', 'vault'];
 
 export const JOBS = [
-  // THE CORNER KIOSK — a back door and a little safe. Pins and dial debut.
-  job('kiosk-1', 'kiosk', [L('pins', 1), L('dial', 1)], 90, 5, 100),
-  // The pressure floor debuts between the door and the safe.
-  job('kiosk-2', 'kiosk', [L('pins', 2), L('tiles', 1), L('dial', 2)], 110, 5, 140),
+  // THE CORNER KIOSK — a creaky floor and a little safe. Tiles and dial debut.
+  job('kiosk-1', 'kiosk', [L('tiles', 1), L('dial', 1)], 90, 5, 100),
+  // The back door: pins debut, with the floor and the safe again behind it.
+  job('kiosk-2', 'kiosk', [L('pins', 1), L('tiles', 2), L('dial', 2)], 110, 5, 140),
 
   // THE PAWNSHOP — lasers debut in the back room.
-  job('pawnshop-1', 'pawnshop', [L('pins', 2), L('lasers', 1), L('dial', 2)], 115, 6, 190),
-  job('pawnshop-2', 'pawnshop', [L('pins', 3), L('tiles', 2), L('lasers', 2), L('dial', 3)], 150, 6, 250),
+  job('pawnshop-1', 'pawnshop', [L('lasers', 1), L('dial', 2)], 100, 6, 190),
+  job('pawnshop-2', 'pawnshop', [L('tiles', 2), L('lasers', 2), L('pins', 2)], 130, 6, 250),
 
   // THE JEWELLER — display cases on keypads. Keypad, then cameras, debut.
-  job('jeweller-1', 'jeweller', [L('pins', 3), L('lasers', 2), L('keypad', 1)], 120, 7, 320),
-  job('jeweller-2', 'jeweller', [L('pins', 3), L('cameras', 1), L('keypad', 2), L('keypad', 3)], 145, 7, 400),
+  job('jeweller-1', 'jeweller', [L('lasers', 2), L('keypad', 1)], 110, 7, 320),
+  job('jeweller-2', 'jeweller', [L('cameras', 1), L('pins', 3), L('keypad', 2)], 135, 7, 400),
   job('jeweller-3', 'jeweller', [L('lasers', 3), L('keypad', 3), L('cameras', 2), L('dial', 4)], 160, 8, 480),
 
   // THE CASINO — the alarm boxes. Wires debut, guarded by cameras.
   job('casino-1', 'casino', [L('cameras', 3), L('keypad', 4), L('wires', 1)], 130, 8, 560),
-  job('casino-2', 'casino', [L('pins', 4), L('wires', 3), L('tiles', 3), L('keypad', 4)], 140, 9, 680),
+  job('casino-2', 'casino', [L('tiles', 3), L('wires', 3), L('pins', 4), L('keypad', 4)], 140, 9, 680),
   job('casino-3', 'casino', [L('cameras', 4), L('wires', 4), L('lasers', 4), L('dial', 5)], 165, 9, 800),
 
   // THE BANK — everything, four deep.
