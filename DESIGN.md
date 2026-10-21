@@ -61,7 +61,7 @@ take is an in-fiction economy and connects to nothing outside the game (§7).
 
 | Lane | Owner of | Files |
 | --- | --- | --- |
-| **S — shell** | boot, screens, corner, menu, Escape, the run, audio, save, i18n, SW | `index.html`, `manifest.webmanifest`, `sw.js`, `README.md`, `js/main.js`, `js/heist.js`, `js/i18n.js`, `js/save.js`, `js/audio.js`, `js/screen.js`, `js/update.js`, `js/touch-guard.js` |
+| **S — shell** | boot, screens, corner, menu, Escape, the run, audio, save, i18n, SW | `index.html`, `manifest.webmanifest`, `sw.js`, `README.md`, `js/main.js`, `js/heist.js`, `js/i18n.js`, `js/save.js`, `js/audio.js`, `js/screen.js`, `js/update.js`, `js/touch-guard.js`, `js/intro.js` |
 | **P — safe cracking** | the four lock puzzles | `js/puzzles/index.js`, `js/puzzles/dial.js`, `js/puzzles/pins.js`, `js/puzzles/keypad.js`, `js/puzzles/wires.js` |
 | **E — tools and jobs** | the tool and gadget catalogue, the mods they produce, the job list, payouts, the difficulty curve | `js/tools.js`, `js/jobs.js` |
 | **K — shop** | the tool shop screen | `js/shop.js`, `css/shop.css` |

@@ -50,6 +50,18 @@
   </head>
   <body>
     <!--
+      The opening sting: a safe dial spins, three tumblers click, the door
+      swings open and a comic starburst flies out to land behind the
+      wordmark. A curtain over the page, never a gate in front of it, and
+      skipped by any tap or key; see the file. ASYNC AND FIRST IN THE BODY,
+      not deferred in the head: a deferred script runs only once the whole
+      document has parsed, and async from here runs as soon as it is
+      fetched, with <body> already there to hang the canvas on — and before
+      js/main.js has registered its capture-phase Escape, so the press that
+      skips is never also the way out to the arcade.
+    -->
+    <script src="js/intro.js" async></script>
+    <!--
       The one canvas, full viewport, owned by js/heist.js: the city at night
       behind the start screen, the job board and the shop; the venue, the
       police meter and the current lock during a run.

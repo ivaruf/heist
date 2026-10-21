@@ -25,7 +25,7 @@
 // All paths are RELATIVE: the game is served from /heist/ and is also framed
 // by the arcade from a sibling directory.
 
-const VERSION = 'v0.1.1'; // no lock left drawn behind the getaway and busted cards
+const VERSION = 'v0.1.2'; // open on a sting: the dial spins, the safe opens, the burst lands behind the title
 const CACHE = `heist-${VERSION}`;
 
 // Every shipped file, of every lane (DESIGN.md §2). install blocks until all of
@@ -40,6 +40,7 @@ const ASSETS = [
   './css/shop.css',
   './js/update.js',
   './js/touch-guard.js',
+  './js/intro.js',
   './js/screen.js',
   './js/main.js',
   './js/heist.js',
