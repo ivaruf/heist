@@ -49,7 +49,7 @@ addStrings({
   nb: {
     'trap.lasers.hint': 'Dra med fingeren eller bruk pilene. Snik deg til utgangen uten å røre strålene!',
     'trap.lasers.hintHit': 'Au! Tilbake ved døra. Se på strålene litt før du går.',
-    'trap.lasers.hintMirror': 'Speilet ditt sender den første strålen du rører tilbake.',
+    'trap.lasers.hintMirror': 'Speilet ditt sender tilbake den første strålen du rører.',
     'trap.lasers.zap': 'ZAPP!',
     'trap.lasers.mirror': 'PLING!',
   },

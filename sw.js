@@ -25,7 +25,7 @@
 // All paths are RELATIVE: the game is served from /heist/ and is also framed
 // by the arcade from a sibling directory.
 
-const VERSION = 'v0.1.5'; // the precache answers only from its own cache, and the job board says Rekord and names the job to crack first
+const VERSION = 'v0.1.6'; // the drill falls silent on pause, give-up and restart, a mistake keeps still under reduced motion, the exit loads offline, and plainer Norwegian
 const CACHE = `heist-${VERSION}`;
 
 // Every shipped file, of every lane (DESIGN.md §2). install blocks until all of
@@ -115,7 +115,10 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE).then((c) => c.put(request, copy));
         }
         return res;
-      }).catch(() => (request.mode === 'navigate' ? caches.match('./index.html', { cacheName: CACHE }) : undefined));
+      }).catch(() => (request.mode === 'navigate'
+        ? caches.match('./index.html', { cacheName: CACHE })
+        // Offline: ../arcade/exit.js is not ours to precache, so any cache's copy will do.
+        : caches.match(request, { ignoreSearch: true })));
     })
   );
 });

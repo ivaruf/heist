@@ -62,7 +62,7 @@ import { createTrap, TRAP_KINDS } from './traps/index.js';
 import { ITEMS, modsFor } from './tools.js';
 import { splitPayout } from './jobs.js';
 import { save, commit } from './save.js';
-import { sfx } from './audio.js';
+import { sfx, stopDrill } from './audio.js';
 import { t, money } from './i18n.js';
 
 const STEP = 1 / 60;
@@ -365,6 +365,7 @@ export function createHeist({ canvas, hud, hudItems, corner, onGetaway, onBusted
 
   function start(job) {
     dropChallenge();
+    stopDrill();
     paused = false;
     attempt++;
     const mods = modsFor(save);
@@ -407,6 +408,7 @@ export function createHeist({ canvas, hud, hudItems, corner, onGetaway, onBusted
 
   function abort() {
     dropChallenge();
+    stopDrill();
     run = null;
     paused = false;
     hud.hidden = true;
@@ -429,6 +431,7 @@ export function createHeist({ canvas, hud, hudItems, corner, onGetaway, onBusted
     if (!run) return;
     paused = true;
     acc = 0;
+    stopDrill();
     releasePointers();
     refreshItems();
   }

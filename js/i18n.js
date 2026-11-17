@@ -80,24 +80,24 @@ const STRINGS = {
     'ui.tag': 'Knekk den før politiet kommer.',
     'ui.funds': (m) => `Kassa: ${m}`,
     'menu.paused.tag': 'Klokka står stille. Låsen venter på deg.',
-    'menu.nomusic': 'HEIST har ingen musikk ennå, bare lydeffekter. Nivået blir husket til musikken kommer.',
+    'menu.nomusic': 'HEIST har ingen musikk ennå, bare lydeffekter. Volumet blir husket til musikken kommer.',
     'menu.giveup.ask': 'Gi opp jobben? Du mister denne runden, men ingenting annet.',
     'menu.giveup.yes': 'Ja, gi opp',
     'menu.giveup.no': 'Nei, fortsett',
 
     // The job board.
     'ui.locks': (n) => (n === 1 ? '1 lås' : `${n} låser`),
-    'ui.time': (s) => `${s} sek`,
+    'ui.time': (s) => `${s} s`,
     'ui.payout': (m) => `Bytte ${m}`,
-    'ui.done': (s) => `Klart! Rekord: ${s} sek til overs`,
-    'ui.locked': 'Låst. Klar forrige jobb først.',
+    'ui.done': (s) => `Klart! Rekord: ${s} s til overs`,
+    'ui.locked': 'Låst. Knekk den forrige først.',
 
     // The run.
     'run.view': 'Låsen',
     'run.lock': (i, n) => `${i}/${n}`, // locks and traps alike, so no noun
     'run.take': (m) => `Bytte ${m}`,
     'run.secs': (s) => `${s} s`,
-    'run.start': 'Sett i gang! Første berøring utløser alarmen.',
+    'run.start': 'Sett i gang! Første trykk starter alarmen.',
     'run.open': 'KA-CHUNK!',
     'run.heat': (s) => `−${s} s`,
     'run.burst.smoke': 'PUFF!',
@@ -110,7 +110,7 @@ const STRINGS = {
     'run.takeLine': (m) => `Byttet: ${m}`,
     'run.bonus': (m) => `Tidsbonus: ${m}`,
     'run.total': (m) => `Kassa nå: ${m}`,
-    'run.replay': 'En jobb du har gjort før gir mindre bytte.',
+    'run.replay': 'En jobb du har gjort før, gir mindre bytte.',
     'run.busted': 'Tatt!',
     'run.busted.line': 'Politiet kom først. Du mister ingenting, bare dingsene du brukte. Prøv igjen!',
     'run.again': 'Prøv igjen',

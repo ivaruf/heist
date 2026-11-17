@@ -191,7 +191,7 @@ addStrings({
     'tool.sneakers.2.name': 'Ninjasokker',
     'tool.sneakers.2.perk': 'En tabbe koster halvparten så mye tid.',
     'tool.sneakers.3.name': 'Skyggetøfler',
-    'tool.sneakers.3.perk': 'En tabbe koster bare tre tideler så mye tid.',
+    'tool.sneakers.3.perk': 'En tabbe koster under en tredjedel så mye tid.',
 
     'tool.scanner.0.name': 'Ingenting',
     'tool.scanner.1.name': 'Politiradio',

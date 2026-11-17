@@ -88,6 +88,8 @@ export function createPuzzle(kind, opts = {}) {
 }
 
 const noop = () => {};
+// shakeX() stays still for a player who has asked for less motion.
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
 /* The colours, read once per lock with a fallback for each, so a palette
  * entry the art lane names differently degrades to a near colour rather than
@@ -224,7 +226,7 @@ function makeKit(o) {
 
     /** The horizontal jolt to apply this frame, in px. */
     shakeX(s) {
-      return kit.shake > 0 ? Math.sin(kit.time * 70) * kit.shake * s * 0.025 : 0;
+      return kit.shake > 0 && !reduced.matches ? Math.sin(kit.time * 70) * kit.shake * s * 0.025 : 0;
     },
 
     drawBursts(ctx, rect) {

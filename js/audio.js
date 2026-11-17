@@ -67,6 +67,7 @@ let ctx = null;
 let master = null;
 const bus = { music: null, sfx: null };
 let noise = null; // one second of white noise, made once
+let drilling = null; // the running drill's oscillators, for stopDrill()
 
 function boot() {
   if (ctx) {
@@ -255,6 +256,7 @@ const CUES = {
     lfo.start(t0);
     osc.stop(t0 + dur + 0.02);
     lfo.stop(t0 + dur + 0.02);
+    drilling = [osc, lfo];
   },
   smoke(out, t0) {
     hiss(out, t0, { dur: 0.7, gain: 0.35, freq: 3000, f1: 300, q: 0.8, type: 'lowpass' });
@@ -295,6 +297,13 @@ function play(name, opts, busName, gap) {
   } catch (err) {
     console.warn('HEIST: a sound failed', name, err);
   }
+}
+
+/** Cut a drill still running: it would rasp on for seconds over a pause, a give-up or a restart. */
+export function stopDrill() {
+  if (!drilling) return;
+  for (const o of drilling) o.stop();
+  drilling = null;
 }
 
 /** DESIGN.md §3.3. Never throws; silent before the first gesture. */

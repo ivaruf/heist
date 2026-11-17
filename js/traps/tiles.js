@@ -39,7 +39,7 @@ addStrings({
     'trap.tiles.hintWatch': 'Se nøye! Husk de trygge flisene.',
     'trap.tiles.hint': 'Gå på de trygge flisene til utgangen. Trykk på flisen ved siden av deg, eller bruk pilene.',
     'trap.tiles.hintReplay': 'Glemt veien? Trykk på øyet (eller R) for å se den én gang til.',
-    'trap.tiles.hintWrong': 'Feil flis! Se på veien en gang til.',
+    'trap.tiles.hintWrong': 'Feil flis! Se på veien én gang til.',
     'trap.tiles.crack': 'KRAKK!',
     'trap.tiles.watch': 'SE!',
   },
