@@ -25,7 +25,7 @@
 // All paths are RELATIVE: the game is served from /heist/ and is also framed
 // by the arcade from a sibling directory.
 
-const VERSION = 'v0.1.4'; // the last lock of a job is cracked, not skipped
+const VERSION = 'v0.1.5'; // the precache answers only from its own cache, and the job board says Rekord and names the job to crack first
 const CACHE = `heist-${VERSION}`;
 
 // Every shipped file, of every lane (DESIGN.md §2). install blocks until all of
@@ -107,7 +107,7 @@ self.addEventListener('fetch', (event) => {
   // be from different builds. New versions arrive as a whole new cache through
   // install/activate above, never file by file.
   event.respondWith(
-    caches.match(request, { ignoreSearch: true }).then((hit) => {
+    caches.match(request, { cacheName: CACHE, ignoreSearch: true }).then((hit) => {
       if (hit) return hit;
       return fetch(request).then((res) => {
         if (res.ok && res.type === 'basic') {
@@ -115,7 +115,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE).then((c) => c.put(request, copy));
         }
         return res;
-      }).catch(() => (request.mode === 'navigate' ? caches.match('./index.html') : undefined));
+      }).catch(() => (request.mode === 'navigate' ? caches.match('./index.html', { cacheName: CACHE }) : undefined));
     })
   );
 });

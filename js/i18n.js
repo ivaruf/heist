@@ -89,8 +89,8 @@ const STRINGS = {
     'ui.locks': (n) => (n === 1 ? '1 lås' : `${n} låser`),
     'ui.time': (s) => `${s} sek`,
     'ui.payout': (m) => `Bytte ${m}`,
-    'ui.done': (s) => `Klart! Best: ${s} sek til overs`,
-    'ui.locked': 'Låst. Klar jobben før først.',
+    'ui.done': (s) => `Klart! Rekord: ${s} sek til overs`,
+    'ui.locked': 'Låst. Klar forrige jobb først.',
 
     // The run.
     'run.view': 'Låsen',
@@ -147,7 +147,7 @@ const STRINGS = {
     'ui.time': (s) => `${s} s`,
     'ui.payout': (m) => `Take ${m}`,
     'ui.done': (s) => `Done! Best: ${s} s to spare`,
-    'ui.locked': 'Locked. Crack the job before first.',
+    'ui.locked': 'Locked. Crack the one before it first.',
 
     'run.view': 'The lock',
     'run.lock': (i, n) => `${i}/${n}`,
